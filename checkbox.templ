@@ -1,0 +1,14 @@
+package otter
+
+type CheckboxProps struct {
+	Label   string
+	Name    string
+	Checked bool
+}
+
+templ Checkbox(props CheckboxProps) {
+	@Label(props.Label) {
+		<input type="checkbox" name={ props.Name } value="true" checked?={ props.Checked }/>
+		<input type="checkbox" name={ props.Name } value="false" hidden/>
+	}
+}

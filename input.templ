@@ -1,0 +1,36 @@
+package otter
+
+type InputType string
+
+type InputProps struct {
+	Label       string
+	Placeholder string
+	Name        string
+	Value       *string
+}
+
+func toValue(v *string) string {
+	if v == nil {
+		return ""
+	}
+
+	return *v
+}
+
+templ input(t string, props InputProps) {
+	@Label(props.Label) {
+		<input type={ t } placeholder={ props.Placeholder } name={ props.Name } value={ toValue(props.Value) }/>
+	}
+}
+
+templ TextInput(props InputProps) {
+	@input("text", props)
+}
+
+templ EmailInput(props InputProps) {
+	@input("email", props)
+}
+
+templ PasswordInput(props InputProps) {
+	@input("password", props)
+}

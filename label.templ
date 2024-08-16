@@ -1,0 +1,22 @@
+package otter
+
+import "github.com/martinmunillas/otter/css"
+
+css labelClass() {
+	font-weight: 800;
+	font-size: 0.875rem;
+}
+
+templ Label(label string) {
+	<label
+		class={
+			css.Flex(css.FlexOptions{
+				Gap: css.SpacingXs,
+			}),
+			labelClass(),
+		}
+	>
+		{ label }
+		{ children... }
+	</label>
+}

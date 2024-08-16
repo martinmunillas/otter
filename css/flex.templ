@@ -1,0 +1,57 @@
+package css
+
+type FlexDirection string
+
+const (
+	FlexDirectionHorizontal FlexDirection = "row"
+	FlexDirectionColumn     FlexDirection = "column"
+)
+
+type FlexAlignItems string
+
+const (
+	FlexAlignItemsStart  FlexAlignItems = "start"
+	FlexAlignItemsEnd    FlexAlignItems = "end"
+	FlexAlignItemsCenter FlexAlignItems = "center"
+)
+
+type FlexOptions struct {
+	Gap        Spacing
+	Padding    Spacing
+	Direction  FlexDirection
+	AlignItems FlexAlignItems
+}
+
+func fallback[T ~string](v T, f T) string {
+	if v == "" {
+		return string(f)
+	}
+	return string(v)
+}
+
+func spacing(token Spacing, fallback Spacing) templ.SafeCSSProperty {
+	switch token {
+	case SpacingNone:
+		return "0"
+	case SpacingXs:
+		return "0.25rem"
+	case SpacingSm:
+		return "0.5rem"
+	case SpacingMd:
+		return "1rem"
+	case SpacingLg:
+		return "1.5rem"
+	case SpacingXl:
+		return "2rem"
+	default:
+		return templ.SafeCSSProperty(spacing(fallback, SpacingNone))
+	}
+}
+
+css Flex(options FlexOptions) {
+	display: flex;
+	flex-direction: { fallback(options.Direction, FlexDirectionColumn) };
+	gap: { spacing(options.Gap, SpacingMd) };
+	padding: { spacing(options.Padding, SpacingNone) };
+	width: 100%;
+}
