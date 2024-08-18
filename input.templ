@@ -7,6 +7,7 @@ type InputProps struct {
 	Placeholder string
 	Name        string
 	Value       *string
+	Class       *string
 }
 
 func toValue(v *string) string {
@@ -19,7 +20,7 @@ func toValue(v *string) string {
 
 templ input(t string, props InputProps) {
 	@Label(props.Label) {
-		<input type={ t } placeholder={ props.Placeholder } name={ props.Name } value={ toValue(props.Value) }/>
+		<input class={ props.Class } type={ t } placeholder={ props.Placeholder } name={ props.Name } value={ toValue(props.Value) }/>
 	}
 }
 
