@@ -6,6 +6,8 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+
+	"github.com/martinmunillas/otter/env"
 )
 
 func runCommand(name string, args ...string) error {
@@ -17,12 +19,14 @@ func runCommand(name string, args ...string) error {
 }
 
 func main() {
+	port := env.RequiredStringEnvVar("PORT")
+
 	var wg sync.WaitGroup
 	wg.Add(2)
 
 	go func() {
 		defer wg.Done()
-		err := runCommand("templ", "generate", "--watch", fmt.Sprintf("--proxy=http://localhost:%s", os.Getenv("PORT")), "-v")
+		err := runCommand("templ", "generate", "--watch", fmt.Sprintf("--proxy=http://localhost:%s", port), "-v")
 		if err != nil {
 			log.Printf("Error running templ command: %v", err)
 		}
