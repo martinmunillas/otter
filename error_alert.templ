@@ -1,22 +1,18 @@
 package otter
 
-import "github.com/martinmunillas/otter/css"
-
 css errorAlert() {
 	background: var(--danger);
 	color: white;
 	border-radius: 0.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
 }
 
 templ ErrorAlert(err error) {
 	if err != nil {
 		<div
-			class={
-				errorAlert(),
-				css.Flex(css.FlexOptions{
-					Padding: css.SpacingMd,
-				}),
-			}
+			class={ errorAlert(), }
 		>
 			{ err.Error() }
 		</div>

@@ -8,10 +8,11 @@ package otter
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/martinmunillas/otter/css"
-
 func labelClass() templ.CSSClass {
 	templ_7745c5c3_CSSBuilder := templruntime.GetBuilder()
+	templ_7745c5c3_CSSBuilder.WriteString(`display:flex;`)
+	templ_7745c5c3_CSSBuilder.WriteString(`flex-direction:column;`)
+	templ_7745c5c3_CSSBuilder.WriteString(`gap:0.25rem;`)
 	templ_7745c5c3_CSSBuilder.WriteString(`font-weight:800;`)
 	templ_7745c5c3_CSSBuilder.WriteString(`font-size:0.875rem;`)
 	templ_7745c5c3_CSSID := templ.CSSID(`labelClass`, templ_7745c5c3_CSSBuilder.String())
@@ -39,12 +40,7 @@ func Label(label string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		var templ_7745c5c3_Var2 = []any{
-			css.Flex(css.FlexOptions{
-				Gap: css.SpacingXs,
-			}),
-			labelClass(),
-		}
+		var templ_7745c5c3_Var2 = []any{labelClass()}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var2...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -69,7 +65,7 @@ func Label(label string) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `label.templ`, Line: 19, Col: 9}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `label.templ`, Line: 15, Col: 9}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {

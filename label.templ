@@ -1,20 +1,16 @@
 package otter
 
-import "github.com/martinmunillas/otter/css"
-
 css labelClass() {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
 	font-weight: 800;
 	font-size: 0.875rem;
 }
 
 templ Label(label string) {
 	<label
-		class={
-			css.Flex(css.FlexOptions{
-				Gap: css.SpacingXs,
-			}),
-			labelClass(),
-		}
+		class={ labelClass(), }
 	>
 		{ label }
 		{ children... }
