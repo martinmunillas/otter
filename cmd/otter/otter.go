@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -21,7 +22,7 @@ func main() {
 
 	go func() {
 		defer wg.Done()
-		err := runCommand("templ", "generate", "--watch", "--proxy=http://localhost:8020", "-v")
+		err := runCommand("templ", "generate", "--watch", fmt.Sprintf("--proxy=http://localhost:%s", os.Getenv("PORT")), "-v")
 		if err != nil {
 			log.Printf("Error running templ command: %v", err)
 		}
