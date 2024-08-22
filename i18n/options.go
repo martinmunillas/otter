@@ -2,7 +2,7 @@ package i18n
 
 var defaultLocale string
 
-// Set Defaults changes the default locale, the default locale is the first one added by default
+// SetDefault changes the default locale, by default the default locale is the first one added
 func SetDefault(locale string) {
 	defaultLocale = locale
 }

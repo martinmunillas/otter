@@ -65,6 +65,9 @@ func AddLocale(locale string, r io.Reader) {
 	}
 	supportedLocales = append(supportedLocales, locale)
 	translations[locale] = translation
+	if defaultLocale == "" {
+		defaultLocale = locale
+	}
 
 }
 
