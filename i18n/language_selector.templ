@@ -1,0 +1,9 @@
+package i18n
+
+templ LanguageSelector() {
+	<select class="language-selector" hx-post="/set-locale" name="locale">
+		for _, locale := range supportedLocales {
+			<option value={ locale } selected?={ FromCtx(ctx) == locale }>{ T(ctx, locale) }</option>
+		}
+	</select>
+}

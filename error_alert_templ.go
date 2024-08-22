@@ -16,6 +16,7 @@ func errorAlert() templ.CSSClass {
 	templ_7745c5c3_CSSBuilder.WriteString(`display:flex;`)
 	templ_7745c5c3_CSSBuilder.WriteString(`flex-direction:column;`)
 	templ_7745c5c3_CSSBuilder.WriteString(`gap:0.5rem;`)
+	templ_7745c5c3_CSSBuilder.WriteString(`padding:1rem;`)
 	templ_7745c5c3_CSSID := templ.CSSID(`errorAlert`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{
 		ID:    templ_7745c5c3_CSSID,
@@ -67,7 +68,7 @@ func ErrorAlert(err error) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(err.Error())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `error_alert.templ`, Line: 17, Col: 16}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `error_alert.templ`, Line: 18, Col: 16}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {

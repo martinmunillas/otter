@@ -3,12 +3,14 @@ package env
 import (
 	"os"
 	"strconv"
+
+	"github.com/martinmunillas/otter/utils"
 )
 
 func RequiredStringEnvVar(key string) string {
 	val := os.Getenv(key)
 	if val == "" {
-		panic("missing required env variable " + key)
+		utils.Throw("missing required env variable " + key)
 	}
 	return val
 }
@@ -36,7 +38,7 @@ func OptionalIntEnvVar(key string, defaultValue int64) int64 {
 	}
 	v, err := strconv.Atoi(val)
 	if err != nil {
-		panic("invalid int for env variable " + key)
+		utils.Throw("invalid int for env variable " + key)
 	}
 	return int64(v)
 }
