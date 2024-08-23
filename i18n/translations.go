@@ -72,13 +72,26 @@ func AddLocale(locale string, r io.Reader) {
 
 }
 
+func strChunk(str string, _ ...error) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+		_, err := io.WriteString(w, str)
+		return err
+	})
+}
+
+func errorThrower(err error) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+		return err
+	})
+}
+
 func t(ctx context.Context, strChunk func(string, ...error) templ.Component, key string, replacements ...map[string]any) templ.Component {
 	str := Translation(ctx, key)
 	if len(replacements) == 0 || str == key {
 		return strChunk(str)
 	}
 	if len(replacements) > 1 {
-		return strChunk(fmt.Sprintf("Invalid message \"%s\" call: more than one replacements map provided", key))
+		return errorThrower(fmt.Errorf("invalid translation \"%s\" call: more than one replacements map provided", key))
 	}
 	runes := []rune(str)
 
@@ -91,7 +104,7 @@ func t(ctx context.Context, strChunk func(string, ...error) templ.Component, key
 		isEscaped := i > 0 && runes[i-1] == '\\'
 		if c == '{' && !isEscaped {
 			if isCollectingVarName {
-				return strChunk(fmt.Sprintf("Invalid message \"%s\" format: opening variable before closing previous", key))
+				return errorThrower(fmt.Errorf("invalid translation \"%s\" format: opening variable before closing previous", key))
 			}
 			if currentStr != "" {
 				chunks = append(chunks, strChunk(currentStr))
@@ -102,14 +115,14 @@ func t(ctx context.Context, strChunk func(string, ...error) templ.Component, key
 		}
 		if c == '}' && !isEscaped {
 			if !isCollectingVarName {
-				return strChunk(fmt.Sprintf("Invalid message \"%s\" format: closing variable before opening one", key))
+				return errorThrower(fmt.Errorf("invalid translation \"%s\" format: closing variable before opening one", key))
 			}
 			if currentVarName == "" {
-				return strChunk(fmt.Sprintf("Invalid message \"%s\" format: missing variable name between {}", key))
+				return errorThrower(fmt.Errorf("invalid translation \"%s\" format: missing variable name between {}", key))
 			}
 			val, ok := replacements[0][currentVarName]
 			if !ok {
-				return strChunk(fmt.Sprintf("Invalid message \"%s\" call: missing variable \"%s\" value", key, currentVarName))
+				return errorThrower(fmt.Errorf("invalid translation \"%s\" call: missing variable \"%s\" value", key, currentVarName))
 			}
 			switch v := val.(type) {
 			case templ.Component:
@@ -119,7 +132,7 @@ func t(ctx context.Context, strChunk func(string, ...error) templ.Component, key
 			case string, []rune, []byte:
 				chunks = append(chunks, strChunk(fmt.Sprintf("%s", v)))
 			default:
-				return strChunk(fmt.Sprintf("Invalid message \"%s\" call: variable \"%s\" of type %t not supported", key, currentVarName, v))
+				return errorThrower(fmt.Errorf("invalid translation \"%s\" call: variable \"%s\" of type %t not supported", key, currentVarName, v))
 
 			}
 			currentVarName = ""

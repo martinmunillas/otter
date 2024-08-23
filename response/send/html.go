@@ -33,46 +33,42 @@ func (h htmlSender) Ok(w http.ResponseWriter, r *http.Request, component templ.C
 
 func (h htmlSender) sendError(w http.ResponseWriter, r *http.Request, errMessage errorMessage) error {
 	w.WriteHeader(errMessage.Code)
-	err := h.errorComponent(errors.New(errMessage.Message)).Render(r.Context(), w)
-	if err != nil {
-		return err
-	}
-	return nil
+	return h.errorComponent(errors.New(errMessage.Message)).Render(r.Context(), w)
 }
 
-func (h htmlSender) InternalError(w http.ResponseWriter, r *http.Request, err error) {
+func (h htmlSender) InternalError(w http.ResponseWriter, r *http.Request, err error) error {
 	if h.logInternals {
 		slog.Error(err.Error())
 	}
-	h.sendError(w, r, errorMessage{
+	return h.sendError(w, r, errorMessage{
 		Message: "Internal server error",
 		Code:    http.StatusInternalServerError,
 	})
 }
 
-func (h htmlSender) Unauthorized(w http.ResponseWriter, r *http.Request, message string) {
-	h.sendError(w, r, errorMessage{
+func (h htmlSender) Unauthorized(w http.ResponseWriter, r *http.Request, message string) error {
+	return h.sendError(w, r, errorMessage{
 		Message: message,
 		Code:    http.StatusUnauthorized,
 	})
 }
 
-func (h htmlSender) Forbidden(w http.ResponseWriter, r *http.Request, message string) {
-	h.sendError(w, r, errorMessage{
+func (h htmlSender) Forbidden(w http.ResponseWriter, r *http.Request, message string) error {
+	return h.sendError(w, r, errorMessage{
 		Message: message,
 		Code:    http.StatusForbidden,
 	})
 }
 
-func (h htmlSender) NotFound(w http.ResponseWriter, r *http.Request, message string) {
-	h.sendError(w, r, errorMessage{
+func (h htmlSender) NotFound(w http.ResponseWriter, r *http.Request, message string) error {
+	return h.sendError(w, r, errorMessage{
 		Message: message,
 		Code:    http.StatusNotFound,
 	})
 }
 
-func (h htmlSender) BadRequest(w http.ResponseWriter, r *http.Request, message string) {
-	h.sendError(w, r, errorMessage{
+func (h htmlSender) BadRequest(w http.ResponseWriter, r *http.Request, message string) error {
+	return h.sendError(w, r, errorMessage{
 		Message: message,
 		Code:    http.StatusBadRequest,
 	})
