@@ -1,0 +1,11 @@
+package i18n
+
+templ chunksRender(chunks []templ.Component) {
+	for _, chunk := range chunks {
+		@chunk
+	}
+}
+
+templ strChunk(str string, _ ...error) {
+	{ str }
+}
