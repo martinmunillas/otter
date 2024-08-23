@@ -95,6 +95,13 @@ func SetLocale(w http.ResponseWriter, r *http.Request, lang string) {
 }
 
 func FromCtx(ctx context.Context) string {
-	locale, _ := ctx.Value(localeKey).(string)
+	l := ctx.Value(localeKey)
+	if l == nil {
+		return defaultLocale
+	}
+	locale, ok := l.(string)
+	if !ok {
+		return defaultLocale
+	}
 	return locale
 }
