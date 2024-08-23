@@ -114,7 +114,7 @@ There are also replacements available, these are super useful when the content n
 ```json
 // en.json
 {
-    "hello": "Hello {name}, we are {logo} and we are stoked to have you with us!"s
+    "hello": "Hello {name}, we are {logo} and we are stoked to have you with us!"
 }
 ```
 ```templ
@@ -122,7 +122,7 @@ There are also replacements available, these are super useful when the content n
 css logoStyles() {
     color: tomato;
     font-weight: 900;
-    font-size: 0.875rem;
+    font-size: 0.875em;
 }
 
 templ Logo() {
