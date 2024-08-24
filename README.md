@@ -2,8 +2,11 @@
 Otter is a toolkit library to build UIs with go and templ
 
 ## CLI
-`go install github.com/martinmunillas/otter/cmd/otter`
-Run otter to run a development server for go and templ
+### Install
+`go install github.com/martinmunillas/otter/cmd/otter@latest`
+### Commands
+`otter init {githubUser}/{projectName}` Will get you started to launch right away
+`otter dev` Will launch a development server, make sure you have a PORT set in the environment variables
 
 ## Packages
 
