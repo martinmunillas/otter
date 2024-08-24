@@ -21,8 +21,7 @@ JSON and HTML response sender utilities
 Api utilities
 ### otter/i18n
 I18n utilities
-#### How to use
-##### Set up
+#### Set up
 First make sure you have some translations files
 ```json
 // en.json
@@ -37,7 +36,7 @@ First make sure you have some translations files
 }
 ```
 Then read the file either at runtime or compile time and pass it to i18n.AddLocale()
-###### Compile time
+##### Compile time
 ```go
 // translations.go
 package translations
@@ -59,7 +58,7 @@ func init() {
 	i18n.AddLocale("es", bytes.NewReader(translations.EsJson))
 }
 ```
-###### Runtime
+##### Runtime
 
 ```go
 // translations.go
@@ -90,12 +89,16 @@ Once you added your locales, make sure you use the i18n.Middleware()
 ```
 This middleware will make sure to set the user's locale to the context, making it available with i18n.FromContext()
 
-##### Locale switching
+#### Locale switching
 The user's locale is determined by the `otter-lang` cookie but when it hasn't been set the `'Accept-Language'` header will be used.
+
 The `otter-lang` cookie will be set only whenever the user decides to change their default locale.
+
 The middleware will enable a `/set-locale` endpoint which will read the `locale` key from the request body and set it to the `otter-lang` cookie.
+
 You can create your own locale setters but there is already a i18n.LanguageSelector component that wraps this endpoint. You can style it from css as this is a `<select />` element with a `"language-selector"` class.
-##### Translations usage
+
+#### Translations usage
 For the use of translations in your templ files you only need to call i18n.T() with your context and the translation key.
 ```templ
 // hello_world.templ
