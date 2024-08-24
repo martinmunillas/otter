@@ -72,10 +72,29 @@ func AddLocale(locale string, r io.Reader) {
 
 }
 
-func strChunk(str string, _ ...error) templ.Component {
+type Replacements = map[string]any
+
+func strChunk(str string, raw bool, _ ...error) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
-		_, err := io.WriteString(w, str)
+		var err error
+		if raw {
+			_, err = io.WriteString(w, str)
+		} else {
+			_, err = io.WriteString(w, templ.EscapeString(str))
+		}
 		return err
+	})
+}
+
+func chunksRender(chunks []templ.Component) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+		for _, chunk := range chunks {
+			err := chunk.Render(ctx, w)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 }
 
@@ -85,10 +104,10 @@ func errorThrower(err error) templ.Component {
 	})
 }
 
-func t(ctx context.Context, strChunk func(string, ...error) templ.Component, key string, replacements ...map[string]any) templ.Component {
+func t(ctx context.Context, key string, raw bool, replacements ...Replacements) templ.Component {
 	str := Translation(ctx, key)
 	if len(replacements) == 0 || str == key {
-		return strChunk(str)
+		return strChunk(str, raw)
 	}
 	if len(replacements) > 1 {
 		return errorThrower(fmt.Errorf("invalid translation \"%s\" call: more than one replacements map provided", key))
@@ -107,7 +126,7 @@ func t(ctx context.Context, strChunk func(string, ...error) templ.Component, key
 				return errorThrower(fmt.Errorf("invalid translation \"%s\" format: opening variable before closing previous", key))
 			}
 			if currentStr != "" {
-				chunks = append(chunks, strChunk(currentStr))
+				chunks = append(chunks, strChunk(currentStr, raw))
 				currentStr = ""
 			}
 			isCollectingVarName = true
@@ -128,9 +147,9 @@ func t(ctx context.Context, strChunk func(string, ...error) templ.Component, key
 			case templ.Component:
 				chunks = append(chunks, v)
 			case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-				chunks = append(chunks, strChunk(fmt.Sprintf("%d", v)))
+				chunks = append(chunks, strChunk(fmt.Sprintf("%d", v), raw))
 			case string, []rune, []byte:
-				chunks = append(chunks, strChunk(fmt.Sprintf("%s", v)))
+				chunks = append(chunks, strChunk(fmt.Sprintf("%s", v), raw))
 			default:
 				return errorThrower(fmt.Errorf("invalid translation \"%s\" call: variable \"%s\" of type %t not supported", key, currentVarName, v))
 
@@ -147,17 +166,17 @@ func t(ctx context.Context, strChunk func(string, ...error) templ.Component, key
 		}
 	}
 	if currentStr != "" {
-		chunks = append(chunks, strChunk(currentStr))
+		chunks = append(chunks, strChunk(currentStr, raw))
 	}
 	return chunksRender(chunks)
 }
 
-func T(ctx context.Context, key string, replacements ...map[string]any) templ.Component {
-	return t(ctx, strChunk, key, replacements...)
+func T(ctx context.Context, key string, replacements ...Replacements) templ.Component {
+	return t(ctx, key, false, replacements...)
 }
 
-func RawT(ctx context.Context, key string, replacements ...map[string]any) templ.Component {
-	return t(ctx, templ.Raw, key, replacements...)
+func RawT(ctx context.Context, key string, replacements ...Replacements) templ.Component {
+	return t(ctx, key, true, replacements...)
 }
 
 func Translation(ctx context.Context, key string) string {

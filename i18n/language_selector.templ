@@ -1,10 +1,12 @@
 package i18n
 
+import "fmt"
+
 templ LanguageSelector() {
 	<select class="language-selector" hx-post="/set-locale" name="locale">
 		for _, locale := range supportedLocales {
 			<option value={ locale } selected?={ FromCtx(ctx) == locale }>
-				@T(ctx, locale)
+				@T(ctx, fmt.Sprintf("locale.%s", locale))
 			</option>
 		}
 	</select>

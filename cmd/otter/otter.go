@@ -32,14 +32,15 @@ var devCmd = &cobra.Command{
 	Short: "Runs a dev server",
 	Long:  `Run a dev server that will auto-compile templ files into go and restart the go server. It will also create a proxy to auto-reload the browser on changes.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		port := env.RequiredStringEnvVar("PORT")
+		port := env.RequiredIntEnvVar("PORT")
+		actualPort := port - 1
 
 		var wg sync.WaitGroup
 		wg.Add(2)
 
 		go func() {
 			defer wg.Done()
-			err := runCommand("templ", "generate", "--watch", fmt.Sprintf("--proxy=http://localhost:%s", port), "-v")
+			err := runCommand("templ", "generate", "--watch", fmt.Sprintf("--proxy=http://localhost:%d", actualPort), fmt.Sprintf("--proxyport=%d", port))
 			if err != nil {
 				log.Printf("Error running templ command: %v", err)
 			}
@@ -47,7 +48,7 @@ var devCmd = &cobra.Command{
 
 		go func() {
 			defer wg.Done()
-			err := runCommand("wgo", "run", "./cmd")
+			err := runCommand(fmt.Sprintf("PORT=%d", actualPort), "wgo", "run", "./cmd")
 			if err != nil {
 				log.Printf("Error running server: %v", err)
 			}
@@ -57,8 +58,24 @@ var devCmd = &cobra.Command{
 	},
 }
 
+var initCmd = &cobra.Command{
+	Use:   "init",
+	Short: "Initializes a new Otter project",
+	Long:  `Set up a new Otter project to get you developing asap`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) < 1 {
+			panic("You should provide a project name in the form `otter init {project-name}`")
+		}
+		err := runCommand("git", "clone", "https://github.com/martinmunillas/otter-example", args[0])
+		if err != nil {
+			log.Printf("Error cloning example project: %v", err)
+		}
+	},
+}
+
 func main() {
 	cmd.AddCommand(devCmd)
+	cmd.AddCommand(initCmd)
 	cmd.Execute()
 
 }

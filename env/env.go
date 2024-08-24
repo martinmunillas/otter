@@ -1,6 +1,7 @@
 package env
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 
@@ -10,7 +11,7 @@ import (
 func RequiredStringEnvVar(key string) string {
 	val := os.Getenv(key)
 	if val == "" {
-		utils.Throw("missing required env variable " + key)
+		utils.Throw(fmt.Sprintf("missing required env variable `%s`", key))
 	}
 	return val
 }
@@ -38,7 +39,19 @@ func OptionalIntEnvVar(key string, defaultValue int64) int64 {
 	}
 	v, err := strconv.Atoi(val)
 	if err != nil {
-		utils.Throw("invalid int for env variable " + key)
+		utils.Throw(fmt.Sprintf("invalid int \"%s\" for env variable `%s`", val, key))
+	}
+	return int64(v)
+}
+
+func RequiredIntEnvVar(key string) int64 {
+	val := os.Getenv(key)
+	if val == "" {
+		utils.Throw(fmt.Sprintf("missing required int for env variable `%s`", key))
+	}
+	v, err := strconv.Atoi(val)
+	if err != nil {
+		utils.Throw(fmt.Sprintf("invalid required int \"%s\" for env variable `%s`", val, key))
 	}
 	return int64(v)
 }
