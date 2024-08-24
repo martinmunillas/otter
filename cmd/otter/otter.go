@@ -11,11 +11,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func runCommand(name string, args ...string) error {
+func runCommand(env []string, name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
+	cmd.Env = append(cmd.Env, env...)
 	return cmd.Run()
 }
 
@@ -24,6 +25,7 @@ var cmd = &cobra.Command{
 	Short: "Otter is a toolkit library for building go and templ applications",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+		cmd.Help()
 	},
 }
 
@@ -40,7 +42,7 @@ var devCmd = &cobra.Command{
 
 		go func() {
 			defer wg.Done()
-			err := runCommand("templ", "generate", "--watch", fmt.Sprintf("--proxy=http://localhost:%d", actualPort), fmt.Sprintf("--proxyport=%d", port))
+			err := runCommand(nil, "templ", "generate", "--watch", fmt.Sprintf("--proxy=http://localhost:%d", actualPort), fmt.Sprintf("--proxyport=%d", port))
 			if err != nil {
 				log.Printf("Error running templ command: %v", err)
 			}
@@ -48,7 +50,7 @@ var devCmd = &cobra.Command{
 
 		go func() {
 			defer wg.Done()
-			err := runCommand(fmt.Sprintf("PORT=%d", actualPort), "wgo", "run", "./cmd")
+			err := runCommand([]string{fmt.Sprintf("PORT=%d", actualPort)}, "wgo", "run", "./cmd")
 			if err != nil {
 				log.Printf("Error running server: %v", err)
 			}
@@ -66,7 +68,7 @@ var initCmd = &cobra.Command{
 		if len(args) < 1 {
 			panic("You should provide a project name in the form `otter init {project-name}`")
 		}
-		err := runCommand("git", "clone", "https://github.com/martinmunillas/otter-example", args[0])
+		err := runCommand(nil, "git", "clone", "https://github.com/martinmunillas/otter-example", args[0])
 		if err != nil {
 			log.Printf("Error cloning example project: %v", err)
 		}
