@@ -1,0 +1,7 @@
+<select class=\"language-selector\" hx-post=\"/set-locale\" name=\"locale\">
+<option value=\"
+\"
+ selected
+>
+</option>
+</select>
