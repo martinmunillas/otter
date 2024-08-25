@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"log"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -61,7 +63,11 @@ func runReloadServer(wg *sync.WaitGroup) {
 			}
 			if event.Has(fsnotify.Write) {
 				if cmd.Process != nil {
-					_ = cmd.Process.Kill()
+					// we try to kill it but might fail because the os process might have already stopped
+					err = cmd.Process.Kill()
+					if !errors.Is(err, os.ErrProcessDone) {
+						log.Println("error: ", err)
+					}
 				}
 				cmd = createDefaultCommand("go", "run", "./cmd/main.go")
 				err = cmd.Run()
@@ -73,6 +79,7 @@ func runReloadServer(wg *sync.WaitGroup) {
 			if !ok {
 				return
 			}
+			log.Println("error:", err)
 		}
 	}
 

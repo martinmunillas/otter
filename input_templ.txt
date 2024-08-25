@@ -1,6 +1,0 @@
-<input class=\"
-\" type=\"
-\" placeholder=\"
-\" name=\"
-\" value=\"
-\">
