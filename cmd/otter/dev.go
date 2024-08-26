@@ -1,14 +1,18 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io/fs"
 	"log"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/martinmunillas/otter/env"
@@ -23,24 +27,37 @@ var devCmd = &cobra.Command{
 		port := env.RequiredIntEnvVar("PORT")
 		actualPort := port - 1
 
+		userInterrupt := make(chan os.Signal, 1)
+		signal.Notify(userInterrupt, syscall.SIGTERM, syscall.SIGINT)
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		go func() {
+			<-userInterrupt
+			cancel()
+			// TODO: find out how to get rid of this sleep, right now is necessary because we need the cancel signal to be sent to the chanel so they can stop their subprocesses and only exit after that, otherwise orphan processes stay around.
+			time.Sleep(time.Second / 2)
+			os.Exit(1)
+		}()
+
 		var wg sync.WaitGroup
 		wg.Add(2)
 
-		go runTemplProxy(&wg, port, actualPort)
-		go runReloadServer(&wg, actualPort)
+		go runTemplProxy(ctx, &wg, port, actualPort)
+		go runReloadServer(ctx, &wg, actualPort)
 
 		wg.Wait()
 	},
 }
 
-func runTemplProxy(wg *sync.WaitGroup, port int64, actualPort int64) {
+func runTemplProxy(ctx context.Context, wg *sync.WaitGroup, port int64, actualPort int64) {
 	defer wg.Done()
 	cmd := createDefaultCommand("templ", "generate", "--watch", fmt.Sprintf("--proxy=http://localhost:%d", actualPort), fmt.Sprintf("--proxyport=%d", port))
-	err := cmd.Run()
+	err := cmd.Start()
 	if err != nil {
 		log.Printf("Error running templ command: %v", err)
 	}
-	defer cmd.Process.Kill()
+	<-ctx.Done()
+	stop(cmd)
 }
 
 func makeMainCmd(port int64) *exec.Cmd {
@@ -50,7 +67,7 @@ func makeMainCmd(port int64) *exec.Cmd {
 	return cmd
 }
 
-func runReloadServer(wg *sync.WaitGroup, port int64) {
+func runReloadServer(ctx context.Context, wg *sync.WaitGroup, port int64) {
 	defer wg.Done()
 
 	watcher, err := fsnotify.NewWatcher()
@@ -69,12 +86,13 @@ func runReloadServer(wg *sync.WaitGroup, port int64) {
 
 	for {
 		select {
+		case <-ctx.Done():
+			stop(cmd)
 		case event, ok := <-watcher.Events:
 			if !ok {
 				return
 			}
 			if event.Has(fsnotify.Write) && strings.HasSuffix(event.Name, ".go") {
-				println(cmd.Process)
 				if cmd.Process != nil {
 					stop(cmd)
 					_ = cmd.Wait()
