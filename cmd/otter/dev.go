@@ -21,28 +21,29 @@ var devCmd = &cobra.Command{
 	Long:  `Run a dev server that will auto-compile templ files into go and restart the go server. It will also create a proxy to auto-reload the browser on changes.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		port := env.RequiredIntEnvVar("PORT")
+		actualPort := port - 1
 
 		var wg sync.WaitGroup
 		wg.Add(2)
 
-		go runTemplProxy(&wg, port)
-		go runReloadServer(&wg)
+		go runTemplProxy(&wg, port, actualPort)
+		go runReloadServer(&wg, actualPort)
 
 		wg.Wait()
 	},
 }
 
-func runTemplProxy(wg *sync.WaitGroup, port int64) {
+func runTemplProxy(wg *sync.WaitGroup, port int64, actualPort int64) {
 	defer wg.Done()
-	actualPort := port - 1
-	err := createDefaultCommand("templ", "generate", "--watch", fmt.Sprintf("--proxy=http://localhost:%d", actualPort), fmt.Sprintf("--proxyport=%d", port)).Run()
+	cmd := createDefaultCommand("templ", "generate", "--watch", fmt.Sprintf("--proxy=http://localhost:%d", actualPort), fmt.Sprintf("--proxyport=%d", port))
+	err := cmd.Run()
 	if err != nil {
 		log.Printf("Error running templ command: %v", err)
 	}
-
+	defer cmd.Process.Kill()
 }
 
-func runReloadServer(wg *sync.WaitGroup) {
+func runReloadServer(wg *sync.WaitGroup, port int64) {
 	defer wg.Done()
 
 	watcher, err := fsnotify.NewWatcher()
@@ -51,7 +52,10 @@ func runReloadServer(wg *sync.WaitGroup) {
 	}
 	defer watcher.Close()
 
-	addAllGoDirectories(watcher)
+	err = addAllGoDirectories(watcher)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	cmd := createDefaultCommand("go", "run", "./cmd/main.go")
 
@@ -61,7 +65,8 @@ func runReloadServer(wg *sync.WaitGroup) {
 			if !ok {
 				return
 			}
-			if event.Has(fsnotify.Write) {
+			fmt.Println(event)
+			if event.Has(fsnotify.Write) && strings.HasSuffix(event.Name, ".go") {
 				if cmd.Process != nil {
 					// we try to kill it but might fail because the os process might have already stopped
 					err = cmd.Process.Kill()
@@ -69,7 +74,9 @@ func runReloadServer(wg *sync.WaitGroup) {
 						log.Println("error: ", err)
 					}
 				}
+				log.Printf("Restarting server, file %s changed\n", event.Name)
 				cmd = createDefaultCommand("go", "run", "./cmd/main.go")
+				cmd.Env = append(os.Environ(), fmt.Sprintf("PORT=%d", port))
 				err = cmd.Run()
 				if err != nil {
 					log.Fatalf(err.Error())
@@ -86,10 +93,18 @@ func runReloadServer(wg *sync.WaitGroup) {
 }
 
 func addAllGoDirectories(w *fsnotify.Watcher) error {
-	return filepath.WalkDir("./", func(path string, d fs.DirEntry, err error) error {
+	root, err := filepath.Abs("./")
+	if err != nil {
+		return err
+	}
+	return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
 		if !d.IsDir() && strings.HasSuffix(path, ".go") {
 			dir := filepath.Dir(path)
-			err := w.Add(dir)
+			log.Printf("Watching: %s\n", dir)
+			err = w.Add(dir)
 			if err != nil {
 				return err
 			}

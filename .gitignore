@@ -1,2 +1,3 @@
 .DS_Store
 *_templ.text
+__debug_bin*
