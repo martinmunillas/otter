@@ -1,11 +1,11 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io/fs"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -43,6 +43,13 @@ func runTemplProxy(wg *sync.WaitGroup, port int64, actualPort int64) {
 	defer cmd.Process.Kill()
 }
 
+func makeMainCmd(port int64) *exec.Cmd {
+	cmd := createDefaultCommand("go", "run", "./cmd/main.go")
+	setpgid(cmd)
+	cmd.Env = append(os.Environ(), fmt.Sprintf("PORT=%d", port))
+	return cmd
+}
+
 func runReloadServer(wg *sync.WaitGroup, port int64) {
 	defer wg.Done()
 
@@ -57,7 +64,8 @@ func runReloadServer(wg *sync.WaitGroup, port int64) {
 		log.Fatal(err)
 	}
 
-	cmd := createDefaultCommand("go", "run", "./cmd/main.go")
+	cmd := makeMainCmd(port)
+	cmd.Start()
 
 	for {
 		select {
@@ -65,22 +73,16 @@ func runReloadServer(wg *sync.WaitGroup, port int64) {
 			if !ok {
 				return
 			}
-			fmt.Println(event)
 			if event.Has(fsnotify.Write) && strings.HasSuffix(event.Name, ".go") {
+				println(cmd.Process)
 				if cmd.Process != nil {
-					// we try to kill it but might fail because the os process might have already stopped
-					err = cmd.Process.Kill()
-					if !errors.Is(err, os.ErrProcessDone) {
-						log.Println("error: ", err)
-					}
+					stop(cmd)
+					_ = cmd.Wait()
 				}
 				log.Printf("Restarting server, file %s changed\n", event.Name)
-				cmd = createDefaultCommand("go", "run", "./cmd/main.go")
-				cmd.Env = append(os.Environ(), fmt.Sprintf("PORT=%d", port))
-				err = cmd.Run()
-				if err != nil {
-					log.Fatalf(err.Error())
-				}
+				cmd = makeMainCmd(port)
+				cmd.Start()
+				defer stop(cmd)
 			}
 		case err, ok := <-watcher.Errors:
 			if !ok {
@@ -103,7 +105,6 @@ func addAllGoDirectories(w *fsnotify.Watcher) error {
 		}
 		if !d.IsDir() && strings.HasSuffix(path, ".go") {
 			dir := filepath.Dir(path)
-			log.Printf("Watching: %s\n", dir)
 			err = w.Add(dir)
 			if err != nil {
 				return err
