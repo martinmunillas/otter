@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"log/slog"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -14,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/a-h/templ/cmd/templ/generatecmd"
 	"github.com/fsnotify/fsnotify"
 	"github.com/martinmunillas/otter/env"
 	"github.com/spf13/cobra"
@@ -42,22 +44,29 @@ var devCmd = &cobra.Command{
 		var wg sync.WaitGroup
 		wg.Add(2)
 
-		go runTemplProxy(ctx, &wg, port, actualPort)
-		go runReloadServer(ctx, &wg, actualPort)
+		go func() {
+			defer wg.Done()
+			runTemplProxy(ctx, port, actualPort)
+		}()
+		go func() {
+			defer wg.Done()
+			runReloadServer(ctx, actualPort)
+		}()
 
 		wg.Wait()
 	},
 }
 
-func runTemplProxy(ctx context.Context, wg *sync.WaitGroup, port int64, actualPort int64) {
-	defer wg.Done()
-	cmd := createDefaultCommand("templ", "generate", "--watch", fmt.Sprintf("--proxy=http://localhost:%d", actualPort), fmt.Sprintf("--proxyport=%d", port))
-	err := cmd.Start()
+func runTemplProxy(ctx context.Context, port int64, actualPort int64) {
+	err := generatecmd.Run(ctx, slog.Default(), generatecmd.Arguments{
+		Watch:       true,
+		ProxyPort:   int(port),
+		Proxy:       fmt.Sprintf("http://localhost:%d", actualPort),
+		OpenBrowser: true,
+	})
 	if err != nil {
 		log.Printf("Error running templ command: %v", err)
 	}
-	<-ctx.Done()
-	stop(cmd)
 }
 
 func makeMainCmd(port int64) *exec.Cmd {
@@ -67,8 +76,7 @@ func makeMainCmd(port int64) *exec.Cmd {
 	return cmd
 }
 
-func runReloadServer(ctx context.Context, wg *sync.WaitGroup, port int64) {
-	defer wg.Done()
+func runReloadServer(ctx context.Context, port int64) {
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -92,16 +100,17 @@ func runReloadServer(ctx context.Context, wg *sync.WaitGroup, port int64) {
 			if !ok {
 				return
 			}
-			if event.Has(fsnotify.Write) && strings.HasSuffix(event.Name, ".go") {
-				if cmd.Process != nil {
-					stop(cmd)
-					_ = cmd.Wait()
-				}
-				log.Printf("Restarting server, file %s changed\n", event.Name)
-				cmd = makeMainCmd(port)
-				cmd.Start()
-				defer stop(cmd)
+			if !event.Has(fsnotify.Write) || !event.Has(fsnotify.Create) || !strings.HasSuffix(event.Name, ".go") {
+				continue
 			}
+			if cmd.Process != nil {
+				stop(cmd)
+				_ = cmd.Wait()
+			}
+			log.Printf("Restarting server, file %s changed\n", event.Name)
+			cmd = makeMainCmd(port)
+			cmd.Start()
+			defer stop(cmd)
 		case err, ok := <-watcher.Errors:
 			if !ok {
 				return

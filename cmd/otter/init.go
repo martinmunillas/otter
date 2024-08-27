@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/martinmunillas/otter/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -104,9 +105,7 @@ var initCmd = &cobra.Command{
 		if err != nil {
 			log.Printf("Error generating templ files: %v", err)
 		}
-		cmd = createDefaultCommand("cp", ".env.example", ".env")
-		cmd.Dir = cwd
-		err = cmd.Run()
+		err = utils.CopyFile(fmt.Sprintf("%s/.env.example", cwd), fmt.Sprintf("%s/.env", cwd))
 		if err != nil {
 			log.Printf("Error setting up .env file: %v", err)
 		}
