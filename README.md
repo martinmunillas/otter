@@ -1,4 +1,7 @@
 # Otter
+
+<img src="https://raw.githubusercontent.com/martinmunillas/otter/main/assets/otter.webp">
+
 Otter is a toolkit library to build UIs with go and templ
 
 ## CLI
