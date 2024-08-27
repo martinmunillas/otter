@@ -64,7 +64,7 @@ func init() {
 ##### Runtime
 
 ```go
-// translations.go
+// main.go
 package translations
 
 import (
@@ -74,11 +74,11 @@ import (
 )
 
 func main() {
-	file, _ := os.Open("./en.json")
+	file, _ := os.Open("./translations/en.json")
 	i18n.AddLocale("en", file)
 	_ = file.Close()
 
-	file, _ = os.Open("./es.json")
+	file, _ = os.Open("./translations/es.json")
 	i18n.AddLocale("es", file)
 	_ = file.Close()
 }
@@ -88,7 +88,10 @@ You could even fetch the translations from a remote source
 Once you added your locales, make sure you use the i18n.Middleware()
 ```go
 // main.go
+func main() {
+	// ...
 	_ = http.ListenAndServe(api.PortString(8080), i18n.Middleware(mux))
+}
 ```
 This middleware will make sure to set the user's locale to the context, making it available with i18n.FromContext()
 
