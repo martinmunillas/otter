@@ -10,12 +10,14 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
 
 	"github.com/a-h/templ/cmd/templ/generatecmd"
+	"github.com/a-h/templ/cmd/templ/sloghandler"
 	"github.com/fsnotify/fsnotify"
 	"github.com/martinmunillas/otter/env"
 	"github.com/spf13/cobra"
@@ -29,6 +31,8 @@ var devCmd = &cobra.Command{
 		port := env.RequiredIntEnvVar("PORT")
 		actualPort := port - 1
 
+		verbose, _ := cmd.Flags().GetBool("verbose")
+
 		userInterrupt := make(chan os.Signal, 1)
 		signal.Notify(userInterrupt, syscall.SIGTERM, syscall.SIGINT)
 		ctx, cancel := context.WithCancel(context.Background())
@@ -41,28 +45,46 @@ var devCmd = &cobra.Command{
 			os.Exit(1)
 		}()
 
+		loggingLevel := slog.LevelInfo.Level()
+		if verbose {
+			loggingLevel = slog.LevelDebug.Level()
+		}
+
+		logger := slog.New(sloghandler.NewHandler(os.Stderr, &slog.HandlerOptions{
+			AddSource: verbose,
+			Level:     loggingLevel,
+		}))
+
 		var wg sync.WaitGroup
 		wg.Add(2)
 
 		go func() {
 			defer wg.Done()
-			runTemplProxy(ctx, port, actualPort)
+			runTemplProxy(ctx, logger, port, actualPort)
 		}()
 		go func() {
 			defer wg.Done()
-			runReloadServer(ctx, actualPort)
+			runReloadServer(ctx, logger, actualPort)
 		}()
 
 		wg.Wait()
 	},
 }
 
-func runTemplProxy(ctx context.Context, port int64, actualPort int64) {
-	err := generatecmd.Run(ctx, slog.Default(), generatecmd.Arguments{
-		Watch:       true,
-		ProxyPort:   int(port),
-		Proxy:       fmt.Sprintf("http://localhost:%d", actualPort),
-		OpenBrowser: true,
+func init() {
+	devCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose output")
+}
+
+func runTemplProxy(ctx context.Context, logger *slog.Logger, port int64, actualPort int64) {
+	err := generatecmd.Run(ctx, logger, generatecmd.Arguments{
+		Watch:             true,
+		ProxyPort:         int(port),
+		Proxy:             fmt.Sprintf("http://localhost:%d", actualPort),
+		OpenBrowser:       true,
+		KeepOrphanedFiles: false,
+		WorkerCount:       runtime.NumCPU(),
+		IncludeVersion:    true,
+		Path:              ".",
 	})
 	if err != nil {
 		log.Printf("Error running templ command: %v", err)
@@ -76,17 +98,17 @@ func makeMainCmd(port int64) *exec.Cmd {
 	return cmd
 }
 
-func runReloadServer(ctx context.Context, port int64) {
+func runReloadServer(ctx context.Context, logger *slog.Logger, port int64) {
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Fatal(err)
+		logger.Error(err.Error())
 	}
 	defer watcher.Close()
 
-	err = addAllGoDirectories(watcher)
+	err = addAllGoDirectories(watcher, logger)
 	if err != nil {
-		log.Fatal(err)
+		logger.Error(err.Error())
 	}
 
 	cmd := makeMainCmd(port)
@@ -100,14 +122,17 @@ func runReloadServer(ctx context.Context, port int64) {
 			if !ok {
 				return
 			}
-			if !event.Has(fsnotify.Write) || !event.Has(fsnotify.Create) || !strings.HasSuffix(event.Name, ".go") {
+			if !(event.Has(fsnotify.Write) || event.Has(fsnotify.Create)) || !strings.HasSuffix(event.Name, ".go") {
 				continue
 			}
+			logger.Debug(fmt.Sprintf("Go file %s changed", event.Name))
 			if cmd.Process != nil {
+				logger.Debug("Stopping running server")
 				stop(cmd)
 				_ = cmd.Wait()
+				logger.Debug("Stopped running server")
 			}
-			log.Printf("Restarting server, file %s changed\n", event.Name)
+			logger.Debug("Restarting server")
 			cmd = makeMainCmd(port)
 			cmd.Start()
 			defer stop(cmd)
@@ -115,13 +140,13 @@ func runReloadServer(ctx context.Context, port int64) {
 			if !ok {
 				return
 			}
-			log.Println("error:", err)
+			logger.Error(err.Error())
 		}
 	}
 
 }
 
-func addAllGoDirectories(w *fsnotify.Watcher) error {
+func addAllGoDirectories(w *fsnotify.Watcher, logger *slog.Logger) error {
 	root, err := filepath.Abs("./")
 	if err != nil {
 		return err
@@ -133,6 +158,7 @@ func addAllGoDirectories(w *fsnotify.Watcher) error {
 		if !d.IsDir() && strings.HasSuffix(path, ".go") {
 			dir := filepath.Dir(path)
 			err = w.Add(dir)
+			logger.Debug(fmt.Sprintf("Watching %s directory", dir))
 			if err != nil {
 				return err
 			}
