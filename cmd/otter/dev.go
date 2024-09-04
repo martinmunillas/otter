@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
-	"log"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -17,9 +16,9 @@ import (
 	"time"
 
 	"github.com/a-h/templ/cmd/templ/generatecmd"
-	"github.com/a-h/templ/cmd/templ/sloghandler"
 	"github.com/fsnotify/fsnotify"
 	"github.com/martinmunillas/otter/env"
+	"github.com/martinmunillas/otter/log"
 	"github.com/spf13/cobra"
 )
 
@@ -45,15 +44,7 @@ var devCmd = &cobra.Command{
 			os.Exit(1)
 		}()
 
-		loggingLevel := slog.LevelInfo.Level()
-		if verbose {
-			loggingLevel = slog.LevelDebug.Level()
-		}
-
-		logger := slog.New(sloghandler.NewHandler(os.Stderr, &slog.HandlerOptions{
-			AddSource: verbose,
-			Level:     loggingLevel,
-		}))
+		logger := log.NewLogger(verbose)
 
 		var wg sync.WaitGroup
 		wg.Add(2)
@@ -87,7 +78,7 @@ func runTemplProxy(ctx context.Context, logger *slog.Logger, port int64, actualP
 		Path:              ".",
 	})
 	if err != nil {
-		log.Printf("Error running templ command: %v", err)
+		logger.Error(err.Error())
 	}
 }
 
