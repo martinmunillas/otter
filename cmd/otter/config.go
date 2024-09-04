@@ -40,7 +40,7 @@ func readConfig() otterConfig {
 
 	if len(config.DbDriver) != 0 {
 		isSupported := false
-		for driver, _ := range supportedDrivers {
+		for driver := range supportedDrivers {
 			if driver == config.DbDriver {
 				isSupported = true
 			}

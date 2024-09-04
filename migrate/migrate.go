@@ -81,7 +81,7 @@ type migrationRecord struct {
 
 func getMigrationRecords(conn *sql.DB) ([]migrationRecord, error) {
 	var migrations []migrationRecord
-	rows, err := conn.Query("SELECT id, migrated_at FROM migrations ORDER BY id")
+	rows, err := conn.Query("SELECT id, migrated_at FROM otter_migrations ORDER BY id")
 	for rows.Next() {
 		var migration migrationRecord
 		err = rows.Scan(&migration.ID, &migration.MigratedAt)
@@ -122,11 +122,11 @@ func migrateMigrations(logger *slog.Logger, conn *sql.DB) error {
 
 	for i, migration := range migrations {
 		// Skip migrations that have already ran
-		if i < len(migrations) {
+		if i < len(records) {
 			continue
 		}
 
-		fmt.Printf("Running migration %s", migration.id)
+		logger.Info(fmt.Sprintf("Running migration %s", migration.id))
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		defer cancel()
@@ -137,12 +137,14 @@ func migrateMigrations(logger *slog.Logger, conn *sql.DB) error {
 		}
 		err = migration.up(ctx, tx)
 		if err != nil {
+			logger.Error(err.Error())
+			tx.Rollback()
 			return err
 		}
 
-		_, err = tx.Exec("INSERT INTO migrations (id, migrated_at) VALUES ($1, $3)", migration.id, time.Now())
-
+		_, err = tx.Exec("INSERT INTO otter_migrations (id, migrated_at) VALUES ($1, $2)", migration.id, time.Now())
 		if err != nil {
+			logger.Error(err.Error())
 			tx.Rollback()
 			return err
 		}
@@ -166,7 +168,7 @@ func ensureMigrationsTable(conn *sql.DB, logger *slog.Logger) error {
 			SELECT 1
 			FROM pg_tables
 			WHERE schemaname = 'public'
-			AND tablename = 'migrations'
+			AND tablename = 'otter_migrations'
 		);`,
 	).Scan(&exists)
 
@@ -175,11 +177,10 @@ func ensureMigrationsTable(conn *sql.DB, logger *slog.Logger) error {
 	}
 
 	if !exists {
-		fmt.Println("Creating migrations table")
+		logger.Info("Creating migrations table")
 		_, err := conn.Exec(
 			`CREATE TABLE "otter_migrations" (
-				"id" INT PRIMARY KEY NOT NULL,
-				"description" VARCHAR NOT NULL,
+				"id" VARCHAR PRIMARY KEY NOT NULL,
 				"migrated_at" TIMESTAMPTZ NOT NULL
 			);
 			`,
