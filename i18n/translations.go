@@ -3,6 +3,7 @@ package i18n
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 
@@ -171,14 +172,17 @@ func t(ctx context.Context, key string, raw bool, replacements ...Replacements) 
 	return chunksRender(chunks)
 }
 
+// T returns the translated translation as a component
 func T(ctx context.Context, key string, replacements ...Replacements) templ.Component {
 	return t(ctx, key, false, replacements...)
 }
 
+// RawT returns the translated translation as a component and allows raw html to be embedded
 func RawT(ctx context.Context, key string, replacements ...Replacements) templ.Component {
 	return t(ctx, key, true, replacements...)
 }
 
+// Translation returns the translated translation as a string
 func Translation(ctx context.Context, key string) string {
 	locale := FromCtx(ctx)
 	content := translations[locale][key]
@@ -186,4 +190,14 @@ func Translation(ctx context.Context, key string) string {
 		return key
 	}
 	return content
+}
+
+// ErrorT returns an error type with the translated translation as content
+func ErrorT(ctx context.Context, key string) error {
+	locale := FromCtx(ctx)
+	content := translations[locale][key]
+	if content == "" {
+		return errors.New(key)
+	}
+	return errors.New(content)
 }
