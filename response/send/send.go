@@ -1,6 +1,6 @@
 package send
 
-import "github.com/martinmunillas/otter"
+import "log/slog"
 
 type errorMessage struct {
 	Code    int    `json:"code"`
@@ -8,9 +8,8 @@ type errorMessage struct {
 }
 
 var Html = htmlSender{
-	errorComponent: otter.ErrorAlert,
-	logInternals:   true,
+	logger: slog.Default(),
 }
 var Json = jsonSender{
-	logInternals: true,
+	logger: slog.Default(),
 }

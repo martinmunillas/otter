@@ -1,29 +1,22 @@
 package send
 
 import (
-	"errors"
 	"log/slog"
 	"net/http"
 
 	"github.com/a-h/templ"
 )
 
-type ErrorComponent = func(err error) templ.Component
-
 type htmlSender struct {
-	errorComponent ErrorComponent
-	logInternals   bool
+	logger *slog.Logger
 }
 
-func (h *htmlSender) DisableLogInternals() {
-	h.logInternals = false
+func (h *htmlSender) SetLogger(logger *slog.Logger) {
+	h.logger = logger
 }
 
-func (h *htmlSender) SetErrorComponent(errorComponent ErrorComponent) {
-	h.errorComponent = errorComponent
-}
-
-func (h htmlSender) Ok(w http.ResponseWriter, r *http.Request, component templ.Component) error {
+func (h htmlSender) send(w http.ResponseWriter, r *http.Request, component templ.Component, status int) error {
+	w.WriteHeader(status)
 	err := component.Render(r.Context(), w)
 	if err != nil {
 		return err
@@ -31,45 +24,27 @@ func (h htmlSender) Ok(w http.ResponseWriter, r *http.Request, component templ.C
 	return nil
 }
 
-func (h htmlSender) sendError(w http.ResponseWriter, r *http.Request, errMessage errorMessage) error {
-	w.WriteHeader(errMessage.Code)
-	return h.errorComponent(errors.New(errMessage.Message)).Render(r.Context(), w)
+func (h htmlSender) Ok(w http.ResponseWriter, r *http.Request, component templ.Component) error {
+	return h.send(w, r, component, http.StatusOK)
 }
 
-func (h htmlSender) InternalError(w http.ResponseWriter, r *http.Request, err error) error {
-	if h.logInternals {
-		slog.Error(err.Error())
-	}
-	return h.sendError(w, r, errorMessage{
-		Message: "Internal server error",
-		Code:    http.StatusInternalServerError,
-	})
+func (h htmlSender) InternalError(w http.ResponseWriter, r *http.Request, err error, component templ.Component) error {
+	h.logger.Error(err.Error())
+	return h.send(w, r, component, http.StatusInternalServerError)
 }
 
-func (h htmlSender) Unauthorized(w http.ResponseWriter, r *http.Request, message string) error {
-	return h.sendError(w, r, errorMessage{
-		Message: message,
-		Code:    http.StatusUnauthorized,
-	})
+func (h htmlSender) Unauthorized(w http.ResponseWriter, r *http.Request, component templ.Component) error {
+	return h.send(w, r, component, http.StatusUnauthorized)
 }
 
-func (h htmlSender) Forbidden(w http.ResponseWriter, r *http.Request, message string) error {
-	return h.sendError(w, r, errorMessage{
-		Message: message,
-		Code:    http.StatusForbidden,
-	})
+func (h htmlSender) Forbidden(w http.ResponseWriter, r *http.Request, component templ.Component) error {
+	return h.send(w, r, component, http.StatusForbidden)
 }
 
-func (h htmlSender) NotFound(w http.ResponseWriter, r *http.Request, message string) error {
-	return h.sendError(w, r, errorMessage{
-		Message: message,
-		Code:    http.StatusNotFound,
-	})
+func (h htmlSender) NotFound(w http.ResponseWriter, r *http.Request, component templ.Component) error {
+	return h.send(w, r, component, http.StatusNotFound)
 }
 
-func (h htmlSender) BadRequest(w http.ResponseWriter, r *http.Request, message string) error {
-	return h.sendError(w, r, errorMessage{
-		Message: message,
-		Code:    http.StatusBadRequest,
-	})
+func (h htmlSender) BadRequest(w http.ResponseWriter, r *http.Request, component templ.Component) error {
+	return h.send(w, r, component, http.StatusBadRequest)
 }

@@ -7,15 +7,14 @@ import (
 )
 
 type jsonSender struct {
-	logInternals bool
+	logger *slog.Logger
 }
-
 type errorResponse struct {
 	Error errorMessage `json:"error"`
 }
 
-func (j *jsonSender) DisableLogInternals() {
-	j.logInternals = false
+func (j *jsonSender) SetLogger(logger *slog.Logger) {
+	j.logger = logger
 }
 
 func (j jsonSender) sendError(w http.ResponseWriter, errResponse errorResponse) error {
@@ -36,9 +35,7 @@ func (j jsonSender) Ok(w http.ResponseWriter, response any) error {
 }
 
 func (j jsonSender) InternalError(w http.ResponseWriter, err error) error {
-	if j.logInternals {
-		slog.Error(err.Error())
-	}
+	j.logger.Error(err.Error())
 	return j.sendError(w, errorResponse{
 		Error: errorMessage{
 			Message: "Internal server error",
