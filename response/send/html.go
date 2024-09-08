@@ -17,6 +17,9 @@ func (h *htmlSender) SetLogger(logger *slog.Logger) {
 
 func (h htmlSender) send(w http.ResponseWriter, r *http.Request, component templ.Component, status int) {
 	w.WriteHeader(status)
+	if component == nil {
+		return
+	}
 	err := component.Render(r.Context(), w)
 	if err != nil {
 		h.logger.Error(err.Error())
