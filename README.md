@@ -21,7 +21,7 @@ Otter is configured through a otter.json file
 ```json
 // otter.json
 {
-    "dbDriver: "postgres",
+    "dbDriver": "postgres",
     "migrationsDir": "./migrations/",
 }
 ```
