@@ -17,26 +17,24 @@ func (j *jsonSender) SetLogger(logger *slog.Logger) {
 	j.logger = logger
 }
 
-func (j jsonSender) sendError(w http.ResponseWriter, errResponse errorResponse) error {
+func (j jsonSender) sendError(w http.ResponseWriter, errResponse errorResponse) {
 	w.WriteHeader(errResponse.Error.Code)
 	err := json.NewEncoder(w).Encode(errResponse)
 	if err != nil {
-		return err
+		j.logger.Error(err.Error())
 	}
-	return nil
 }
 
-func (j jsonSender) Ok(w http.ResponseWriter, response any) error {
+func (j jsonSender) Ok(w http.ResponseWriter, response any) {
 	err := json.NewEncoder(w).Encode(response)
 	if err != nil {
-		return j.InternalError(w, err)
+		j.logger.Error(err.Error())
 	}
-	return nil
 }
 
-func (j jsonSender) InternalError(w http.ResponseWriter, err error) error {
+func (j jsonSender) InternalError(w http.ResponseWriter, err error) {
 	j.logger.Error(err.Error())
-	return j.sendError(w, errorResponse{
+	j.sendError(w, errorResponse{
 		Error: errorMessage{
 			Message: "Internal server error",
 			Code:    http.StatusInternalServerError,
@@ -44,8 +42,8 @@ func (j jsonSender) InternalError(w http.ResponseWriter, err error) error {
 	})
 }
 
-func (j jsonSender) Unauthorized(w http.ResponseWriter, message string) error {
-	return j.sendError(w, errorResponse{
+func (j jsonSender) Unauthorized(w http.ResponseWriter, message string) {
+	j.sendError(w, errorResponse{
 		Error: errorMessage{
 			Message: message,
 			Code:    http.StatusUnauthorized,
@@ -53,8 +51,8 @@ func (j jsonSender) Unauthorized(w http.ResponseWriter, message string) error {
 	})
 }
 
-func (j jsonSender) Forbidden(w http.ResponseWriter, message string) error {
-	return j.sendError(w, errorResponse{
+func (j jsonSender) Forbidden(w http.ResponseWriter, message string) {
+	j.sendError(w, errorResponse{
 		Error: errorMessage{
 			Message: message,
 			Code:    http.StatusForbidden,
@@ -62,8 +60,8 @@ func (j jsonSender) Forbidden(w http.ResponseWriter, message string) error {
 	})
 }
 
-func (j jsonSender) NotFound(w http.ResponseWriter, message string) error {
-	return j.sendError(w, errorResponse{
+func (j jsonSender) NotFound(w http.ResponseWriter, message string) {
+	j.sendError(w, errorResponse{
 		Error: errorMessage{
 			Message: message,
 			Code:    http.StatusNotFound,
@@ -71,8 +69,8 @@ func (j jsonSender) NotFound(w http.ResponseWriter, message string) error {
 	})
 }
 
-func (j jsonSender) BadRequest(w http.ResponseWriter, message string) error {
-	return j.sendError(w, errorResponse{
+func (j jsonSender) BadRequest(w http.ResponseWriter, message string) {
+	j.sendError(w, errorResponse{
 		Error: errorMessage{
 			Message: message,
 			Code:    http.StatusBadRequest,
