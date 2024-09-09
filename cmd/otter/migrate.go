@@ -78,6 +78,8 @@ var migrateNewCmd = &cobra.Command{
 		}
 		t := time.Now().Format("20060102150405")
 
+		_ = os.MkdirAll(config.MigrationsDir, 0755)
+
 		f, err := os.Create(fmt.Sprintf("%s/%s_%s.go", config.MigrationsDir, t, toSnakeCase(description)))
 		if err != nil {
 			panic(err)
