@@ -78,18 +78,21 @@ var migrateNewCmd = &cobra.Command{
 		}
 		t := time.Now().Format("20060102150405")
 
-		_ = os.MkdirAll(config.MigrationsDir, 0755)
+		err := os.MkdirAll(config.MigrationsDir, 0755)
+		if err != nil {
+			fatal(logger, err)
+		}
 
 		f, err := os.Create(fmt.Sprintf("%s/%s_%s.go", config.MigrationsDir, t, toSnakeCase(description)))
 		if err != nil {
-			panic(err)
+			fatal(logger, err)
 		}
 		defer f.Close()
 		mainFile := makeMigrationFile(t, description)
 
 		_, err = f.WriteString(mainFile)
 		if err != nil {
-			panic(err)
+			fatal(logger, err)
 		}
 
 	},
@@ -141,40 +144,34 @@ var migrateUpCmd = &cobra.Command{
 		}
 		err := os.RemoveAll("./.otter")
 		if err != nil {
-			logger.Error(err.Error())
-			os.Exit(1)
+			fatal(logger, err)
 		}
 		err = os.Mkdir("./.otter", 0755)
 		if err != nil {
-			logger.Error(err.Error())
-			os.Exit(1)
+			fatal(logger, err)
 		}
 		err = os.Mkdir("./.otter/migrate", 0755)
 		if err != nil {
-			logger.Error(err.Error())
-			os.Exit(1)
+			fatal(logger, err)
 		}
 
 		mainFile := makeTmpMigrationRunnerFile()
 
 		f, err := os.Create("./.otter/migrate/main.go")
 		if err != nil {
-			logger.Error(err.Error())
-			os.Exit(1)
+			fatal(logger, err)
 		}
 		defer f.Close()
 
 		_, err = f.WriteString(mainFile)
 		if err != nil {
-			logger.Error(err.Error())
-			os.Exit(1)
+			fatal(logger, err)
 		}
 		cmd := createDefaultCommand("go", "run", "./.otter/migrate/main.go")
 
 		err = cmd.Run()
 		if err != nil {
-			logger.Error(err.Error())
-			os.Exit(1)
+			fatal(logger, err)
 		}
 
 		f.Close()
@@ -200,19 +197,23 @@ import (
 )
 
 func main() {
+	logger := log.NewLogger(false)
+	
 	dbUser := env.RequiredStringEnvVar("DB_USER")
 	dbName := env.RequiredStringEnvVar("DB_NAME")
 	dbPassword := env.RequiredStringEnvVar("DB_PASSWORD")
 	connStr := fmt.Sprintf("user=%%s dbname=%%s password=%%s sslmode=disable", dbUser, dbName, dbPassword)
+	
 	db, err := sql.Open("%s", connStr)
 	if err != nil {
-		panic(err)
+		logger.Error(err.Error())
+		os.Exit(1)
 	}
 
-	logger := log.NewLogger(false)
 	err = migrate.RunAll(db, logger)
 	if err != nil {
 		logger.Error(err.Error())
+		os.Exit(1)
 	}
 }
 `, supportedDrivers[config.DbDriver], config.moduleName, config.MigrationsDir, config.DbDriver)

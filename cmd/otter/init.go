@@ -1,12 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/martinmunillas/otter/log"
 	"github.com/martinmunillas/otter/utils"
 	"github.com/spf13/cobra"
 )
@@ -51,10 +52,11 @@ var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initializes a new Otter project",
 	Long:  `Set up a new Otter project to get you developing asap`,
-	Run: func(_ *cobra.Command, args []string) {
+	Run: func(c *cobra.Command, args []string) {
 		if len(args) < 1 {
 			panic("You should provide a project name in the form `otter init {githubUser}/{repositoryName}`")
 		}
+		logger := log.NewLogger(true)
 		projectName := args[0]
 		githubUser := ""
 		repositoryName := ""
@@ -71,12 +73,11 @@ var initCmd = &cobra.Command{
 			}
 		}
 		if githubUser == "" || repositoryName == "" {
-			panic("You should provide a project name in the form `otter init {githubUser}/{repositoryName}`")
+			fatal(logger, errors.New("you should provide a project name in the form `otter init {githubUser}/{repositoryName}`"))
 		}
 		err := createDefaultCommand("git", "clone", "https://github.com/martinmunillas/otter-example", repositoryName).Run()
 		if err != nil {
-			log.Printf("Error cloning example project: %v", err)
-			return
+			fatal(logger, fmt.Errorf("error cloning example project: %v", err))
 		}
 
 		// ignore the error because if the repositoryName is invalid git clone would have failed already
@@ -84,30 +85,27 @@ var initCmd = &cobra.Command{
 
 		err = os.RemoveAll(fmt.Sprintf("%s/.git/", repositoryName))
 		if err != nil {
-			log.Printf("Error recreating git repository: %v", err)
-			return
+			fatal(logger, fmt.Errorf("error recreating git repository: %v", err))
 		}
 		cmd := createDefaultCommand("git", "init")
 		cmd.Dir = cwd
 		err = cmd.Run()
 		if err != nil {
-			log.Printf("Error recreating git repository: %v", err)
-			return
+			fatal(logger, fmt.Errorf("error recreating git repository: %v", err))
 		}
 		err = filepath.Walk(cwd, refactorFunc("martinmunillas/otter-example", projectName, []string{"*.go", "*.templ", "go.mod", "go.sum"}))
 		if err != nil {
-			log.Printf("Error refactoring go module: %v", err)
-			return
+			fatal(logger, fmt.Errorf("error refactoring go module: %v", err))
 		}
 		cmd = createDefaultCommand("go", "generate")
 		cmd.Dir = cwd
 		err = cmd.Run()
 		if err != nil {
-			log.Printf("Error generating templ files: %v", err)
+			fatal(logger, fmt.Errorf("error generating templ files: %v", err))
 		}
 		err = utils.CopyFile(fmt.Sprintf("%s/.env.example", cwd), fmt.Sprintf("%s/.env", cwd))
 		if err != nil {
-			log.Printf("Error setting up .env file: %v", err)
+			fatal(logger, fmt.Errorf("error setting up .env file: %v", err))
 		}
 
 	},
