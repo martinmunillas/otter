@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$id": "https://raw.githubusercontent.com/martinmunillas/otter/main/otterconfig.schema.json",
+  "title": "Otter config",
+  "type": "object",
+  "properties": {
+    "dbDriver": {
+      "type": "string",
+      "enum": ["postgres"]
+    },
+    "migrationsDir": {
+      "type": "string"
+    }
+  }
+}
