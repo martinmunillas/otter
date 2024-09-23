@@ -1,4 +1,4 @@
-package api
+package server
 
 import (
 	"fmt"
@@ -8,13 +8,14 @@ import (
 	"path/filepath"
 )
 
-func ServeStatic(path string, mux *http.ServeMux) {
+func (s *server) ServeStatic(path string) *server {
 	staticDir, err := filepath.Abs(path)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	mux.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir(staticDir))))
+	s.mux.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir(staticDir))))
 
 	slog.Info(fmt.Sprintf("Serving static files from %s", staticDir))
+	return s
 }
