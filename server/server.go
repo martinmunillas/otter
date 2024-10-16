@@ -11,7 +11,8 @@ import (
 )
 
 type server struct {
-	mux *http.ServeMux
+	mux         *http.ServeMux
+	middlewares []Middleware
 }
 
 type SendOk struct {
@@ -160,7 +161,11 @@ func NewServer(endpoints []Endpoint) *server {
 
 func (s server) Listen(port int64) {
 	slog.Info(fmt.Sprintf("Server listening on port %d", port))
-	err := http.ListenAndServe(PortString(port), i18n.Middleware(s.mux))
+	handler := i18n.Middleware(s.mux)
+	for _, middleware := range s.middlewares {
+		handler = middleware(handler)
+	}
+	err := http.ListenAndServe(PortString(port), handler)
 	if err != nil {
 		slog.Error(err.Error())
 	}
