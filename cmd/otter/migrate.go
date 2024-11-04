@@ -186,6 +186,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"os"
 
 	_ "%s"
 
@@ -202,7 +203,19 @@ func main() {
 	dbUser := env.RequiredStringEnvVar("DB_USER")
 	dbName := env.RequiredStringEnvVar("DB_NAME")
 	dbPassword := env.RequiredStringEnvVar("DB_PASSWORD")
+	dbHost := env.OptionalStringEnvVar("DB_HOST", "")
+	dbPort := env.OptionalStringEnvVar("DB_PORT", "")
 	connStr := fmt.Sprintf("user=%%s dbname=%%s password=%%s sslmode=disable", dbUser, dbName, dbPassword)
+
+	if dbHost != "" {
+		connStr += " host=" + dbHost
+	}
+
+	if dbPort != "" {
+		connStr += " port=" + dbPort
+	}
+
+	fmt.Println(connStr)
 	
 	db, err := sql.Open("%s", connStr)
 	if err != nil {

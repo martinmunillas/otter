@@ -46,6 +46,12 @@ var devCmd = &cobra.Command{
 
 		logger := log.NewLogger(verbose)
 
+		// err = migrate.EnsureAllMigrationsRanAndAreValid(db, logger)
+		// if err != nil {
+		// 	logger.Error(err.Error())
+		// 	os.Exit(1)
+		// }
+
 		var wg sync.WaitGroup
 		wg.Add(2)
 

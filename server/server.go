@@ -1,11 +1,13 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
 
 	"github.com/a-h/templ"
+	"github.com/martinmunillas/otter"
 	"github.com/martinmunillas/otter/i18n"
 	"github.com/martinmunillas/otter/response/send"
 )
@@ -55,13 +57,15 @@ type Redirect struct {
 }
 
 type Tools struct {
-	T            func(key string, replacements ...i18n.Replacements) templ.Component
-	RawT         func(key string, replacements ...i18n.Replacements) templ.Component
-	Translation  func(key string) string
-	ErrorT       func(key string) error
-	Send         Send
-	Redirect     Redirect
-	SetRawCookie func(rawCookie string)
+	T             func(key string, replacements ...i18n.Replacements) templ.Component
+	RawT          func(key string, replacements ...i18n.Replacements) templ.Component
+	Translation   func(key string) string
+	ErrorT        func(key string) error
+	Send          Send
+	Redirect      Redirect
+	SetRawCookies func(rawCookies string)
+	SetCookie     func(cookie http.Cookie)
+	SetToast      func(toast otter.Toast)
 }
 
 type Handler = func(r *http.Request, t Tools)
@@ -91,8 +95,20 @@ func makeTools(w http.ResponseWriter, r *http.Request) Tools {
 				w.Header().Set("HX-Redirect", path)
 			},
 		},
-		SetRawCookie: func(raw string) {
+		SetRawCookies: func(raw string) {
 			w.Header().Set("Set-Cookie", raw)
+		},
+		SetCookie: func(cookie http.Cookie) {
+			http.SetCookie(w, &cookie)
+		},
+		SetToast: func(toast otter.Toast) {
+			eventMap := map[string]otter.Toast{}
+			eventMap["makeToast"] = toast
+			jsonData, err := json.Marshal(eventMap)
+			if err != nil {
+				return
+			}
+			w.Header().Set("HX-Trigger", string(jsonData))
 		},
 		Send: Send{
 			Ok: SendOk{

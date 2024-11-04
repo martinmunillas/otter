@@ -1,0 +1,106 @@
+package otter
+
+import "fmt"
+
+const (
+	INFO    = "info"
+	SUCCESS = "success"
+	WARNING = "warning"
+	DANGER  = "danger"
+)
+
+type Toast struct {
+	Level   string `json:"level"`
+	Message string `json:"message"`
+}
+
+func newToast(level string, message string) Toast {
+	return Toast{level, message}
+}
+
+func InfoToast(message string) Toast {
+	return newToast(INFO, message)
+}
+
+func SuccessToast(message string) Toast {
+	return newToast(SUCCESS, message)
+}
+
+func WarningToast(message string) Toast {
+	return newToast(WARNING, message)
+}
+
+func DangerToast(message string) Toast {
+	return newToast(DANGER, message)
+}
+
+func (t Toast) String() string {
+	return fmt.Sprintf("%s: %s", t.Level, t.Message)
+}
+
+script toastListener() {
+	class Toast {
+		/**
+		* A class representing a Toast notification.
+		* @param level {("info"|"success"|"warning"|"danger")}
+		* @param message { string }
+		*/
+		constructor(level, message) {
+			this.level = level;
+			this.message = message;
+		}
+
+		/**
+		* Makes the toast container element. A button containing the entire notification.
+		* @returns {HTMLButtonElement}
+		*/
+		#makeToastContainerButton() {
+			const button = document.createElement("button");
+			button.classList.add("toast");
+			button.classList.add(`toast-${this.level}`);
+			button.setAttribute("role", "alert");
+			button.setAttribute("aria-label", "Close");
+			button.addEventListener("click", () => button.remove());
+			return button;
+		}
+
+		/**
+		* Makes the element containing the body of the toast notification.
+		* @returns {HTMLSpanElement}
+		*/
+		#makeToastContentElement() {
+			const messageContainer = document.createElement("span");
+			messageContainer.textContent = this.message;
+			return messageContainer;
+		}
+
+		/**
+		* Presents the toast notification at the end of the given container.
+		* @param containerQuerySelector {string} a CSS query selector identifying the container for all toasts.
+		*/
+		show(containerQuerySelector = "#toast-container") {
+			const toast = this.#makeToastContainerButton();
+			const toastContent = this.#makeToastContentElement()
+			toast.appendChild(toastContent);
+
+			const toastContainer = document.querySelector(containerQuerySelector);
+			toastContainer.appendChild(toast);
+		}
+	}
+
+	document.body.addEventListener("makeToast", onMakeToast);
+
+	/**
+	* Presents a toast notification when the `makeToast` event is triggered
+	* @param e {{detail: {level: string, message: string}}}
+	*/
+	function onMakeToast(e) {
+		const toast = new Toast(e.detail.level, e.detail.message);
+		toast.show();
+	}
+}
+
+templ ToastHandler() {
+	<div id="toast-container"></div>
+	@toastListener()
+}
