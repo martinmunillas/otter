@@ -32,7 +32,9 @@ func (h htmlSender) Ok(w http.ResponseWriter, ctx context.Context, component tem
 }
 
 func (h htmlSender) InternalError(w http.ResponseWriter, ctx context.Context, err error, component templ.Component) {
-	h.logger.Error(err.Error())
+	if err != nil {
+		h.logger.Error(err.Error())
+	}
 	h.send(w, ctx, component, http.StatusInternalServerError)
 }
 

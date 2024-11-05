@@ -33,7 +33,9 @@ func (j jsonSender) Ok(w http.ResponseWriter, response any) {
 }
 
 func (j jsonSender) InternalError(w http.ResponseWriter, err error) {
-	j.logger.Error(err.Error())
+	if err != nil {
+		j.logger.Error(err.Error())
+	}
 	j.sendError(w, errorResponse{
 		Error: errorMessage{
 			Message: "Internal server error",

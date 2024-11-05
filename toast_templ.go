@@ -48,8 +48,8 @@ func (t Toast) String() string {
 
 func toastListener() templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_toastListener_ee3d`,
-		Function: `function __templ_toastListener_ee3d(){class Toast {
+		Name: `__templ_toastListener_013f`,
+		Function: `function __templ_toastListener_013f(){class Toast {
 		/**
 		* A class representing a Toast notification.
 		* @param level {("info"|"success"|"warning"|"danger")}
@@ -105,13 +105,12 @@ func toastListener() templ.ComponentScript {
 	* @param e {{detail: {level: string, message: string}}}
 	*/
 	function onMakeToast(e) {
-		console.log(e);
 		const toast = new Toast(e.detail.level, e.detail.message);
 		toast.show();
 	}
 }`,
-		Call:       templ.SafeScript(`__templ_toastListener_ee3d`),
-		CallInline: templ.SafeScriptInline(`__templ_toastListener_ee3d`),
+		Call:       templ.SafeScript(`__templ_toastListener_013f`),
+		CallInline: templ.SafeScriptInline(`__templ_toastListener_013f`),
 	}
 }
 

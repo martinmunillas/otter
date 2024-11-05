@@ -8,11 +8,16 @@ css labelClass() {
 	font-size: 0.875rem;
 }
 
-templ Label(label string) {
+templ Label(label string, required bool) {
 	<label
 		class={ labelClass(), }
 	>
-		{ label }
+		<span>
+			{ label }
+			if required {
+				<span class="required-indicator">*</span>
+			}
+		</span>
 		{ children... }
 	</label>
 }

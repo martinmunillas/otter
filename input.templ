@@ -8,6 +8,7 @@ type InputProps struct {
 	Name        string
 	Value       *string
 	Class       *string
+	Required    bool
 }
 
 func toValue(v *string) string {
@@ -19,8 +20,8 @@ func toValue(v *string) string {
 }
 
 templ input(t string, props InputProps) {
-	@Label(props.Label) {
-		<input class={ props.Class } type={ t } placeholder={ props.Placeholder } name={ props.Name } value={ toValue(props.Value) }/>
+	@Label(props.Label, props.Required) {
+		<input class={ props.Class } type={ t } placeholder={ props.Placeholder } name={ props.Name } required?={ props.Required } value={ toValue(props.Value) }/>
 	}
 }
 
@@ -34,4 +35,14 @@ templ EmailInput(props InputProps) {
 
 templ PasswordInput(props InputProps) {
 	@input("password", props)
+}
+
+templ DateInput(props InputProps) {
+	@input("date", props)
+}
+
+templ Textarea(props InputProps) {
+	@Label(props.Label, props.Required) {
+		<textarea class={ props.Class } placeholder={ props.Placeholder } name={ props.Name } required?={ props.Required } value={ toValue(props.Value) }></textarea>
+	}
 }
