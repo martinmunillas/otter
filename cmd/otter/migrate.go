@@ -187,19 +187,17 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"log/slog"
 
 	_ "%s"
 
 	"github.com/martinmunillas/otter/migrate"
-	"github.com/martinmunillas/otter/log"
 	"github.com/martinmunillas/otter/env"
 	
 	_ "%s/%s"
 )
 
 func main() {
-	logger := log.NewLogger(false)
-	
 	dbUser := env.RequiredStringEnvVar("DB_USER")
 	dbName := env.RequiredStringEnvVar("DB_NAME")
 	dbPassword := env.RequiredStringEnvVar("DB_PASSWORD")
@@ -215,17 +213,15 @@ func main() {
 		connStr += " port=" + dbPort
 	}
 
-	fmt.Println(connStr)
-	
 	db, err := sql.Open("%s", connStr)
 	if err != nil {
-		logger.Error(err.Error())
+		slog.Error(err.Error())
 		os.Exit(1)
 	}
 
-	err = migrate.RunAll(db, logger)
+	err = migrate.RunAll(db, slog.Default())
 	if err != nil {
-		logger.Error(err.Error())
+		slog.Error(err.Error())
 		os.Exit(1)
 	}
 }

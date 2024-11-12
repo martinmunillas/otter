@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,7 +13,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func refactorFunc(old, new string, filePatterns []string) filepath.WalkFunc {
+func refactorFunc(old, new string, filePatterns []string, logger *slog.Logger) filepath.WalkFunc {
 	return filepath.WalkFunc(func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -33,7 +34,7 @@ func refactorFunc(old, new string, filePatterns []string) filepath.WalkFunc {
 					return err
 				}
 
-				fmt.Println("Refactoring:", path)
+				logger.Debug(fmt.Sprintf("Refactoring: %s", path))
 
 				newContents := strings.Replace(string(read), old, new, -1)
 
@@ -56,7 +57,10 @@ var initCmd = &cobra.Command{
 		if len(args) < 1 {
 			panic("You should provide a project name in the form `otter init {githubUser}/{repositoryName}`")
 		}
-		logger := log.NewLogger(true)
+
+		verbose, _ := cmd.Flags().GetBool("verbose")
+
+		logger := log.NewLogger(verbose)
 		projectName := args[0]
 		githubUser := ""
 		repositoryName := ""
@@ -93,7 +97,7 @@ var initCmd = &cobra.Command{
 		if err != nil {
 			fatal(logger, fmt.Errorf("error recreating git repository: %v", err))
 		}
-		err = filepath.Walk(cwd, refactorFunc("martinmunillas/otter-example", projectName, []string{"*.go", "*.templ", "go.mod", "go.sum"}))
+		err = filepath.Walk(cwd, refactorFunc("martinmunillas/otter-example", projectName, []string{"*.go", "*.templ", "go.mod", "go.sum"}, logger))
 		if err != nil {
 			fatal(logger, fmt.Errorf("error refactoring go module: %v", err))
 		}
