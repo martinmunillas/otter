@@ -12,11 +12,11 @@ import (
 )
 
 // https://github.com/opral/monorepo/blob/main/inlang/source-code/plugins/t-function-matcher/marketplace-manifest.json
-func flattenJson(input map[string]interface{}) (map[string]string, error) {
+func flattenJson(input map[string]any) (map[string]string, error) {
 	flatMap := make(map[string]string)
 
-	var flatten func(map[string]interface{}, string) error
-	flatten = func(data map[string]interface{}, prefix string) error {
+	var flatten func(map[string]any, string) error
+	flatten = func(data map[string]any, prefix string) error {
 		for key, value := range data {
 			fullKey := key
 			if prefix != "" {
@@ -25,7 +25,7 @@ func flattenJson(input map[string]interface{}) (map[string]string, error) {
 
 			// Type switch to handle nested maps
 			switch v := value.(type) {
-			case map[string]interface{}:
+			case map[string]any:
 				err := flatten(v, fullKey)
 				if err != nil {
 					return err
@@ -47,7 +47,7 @@ var translations = make(map[string]map[string]string, 2)
 var supportedLocales = make([]string, 0, 2)
 
 func processLang(r io.Reader) (map[string]string, error) {
-	m := map[string]interface{}{}
+	m := map[string]any{}
 	err := json.NewDecoder(r).Decode(&m)
 	if err != nil {
 		return nil, err
