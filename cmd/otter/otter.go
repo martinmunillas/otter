@@ -9,9 +9,6 @@ var cmd = &cobra.Command{
 	Use:   "otter",
 	Short: "Otter is a toolkit library for building go and templ applications",
 	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
-	},
 }
 
 func main() {
@@ -19,5 +16,7 @@ func main() {
 	cmd.AddCommand(devCmd)
 	cmd.AddCommand(initCmd)
 	cmd.AddCommand(migrateCmd)
-	cmd.Execute()
+	if err := cmd.Execute(); err != nil {
+		panic(err)
+	}
 }

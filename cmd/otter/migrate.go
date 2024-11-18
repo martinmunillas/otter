@@ -7,6 +7,9 @@ import (
 	"time"
 	"unicode"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"github.com/martinmunillas/otter/log"
 	"github.com/spf13/cobra"
 )
@@ -20,9 +23,6 @@ var migrateCmd = &cobra.Command{
 	Use:   "migrate",
 	Short: "Migration utils",
 	Long:  ``,
-	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
-	},
 }
 
 func toSnakeCase(str string) string {
@@ -53,7 +53,7 @@ func toPascalCase(str string) string {
 		return r == '_' || r == ' ' || r == '-'
 	})
 	for i, word := range words {
-		words[i] = strings.Title(strings.ToLower(word))
+		words[i] = cases.Title(language.Und).String(strings.ToLower(word))
 	}
 	return strings.Join(words, "")
 }
