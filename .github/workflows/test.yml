@@ -9,7 +9,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: golangci/golangci-lint-action@v6
         with:
-          only-new-issues: true
   test:
     strategy:
       fail-fast: false
