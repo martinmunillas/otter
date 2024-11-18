@@ -27,7 +27,12 @@ var devCmd = &cobra.Command{
 	Short: "Runs a dev server",
 	Long:  `Run a dev server that will auto-compile templ files into go and restart the go server. It will also create a proxy to auto-reload the browser on changes.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		port := env.RequiredIntEnvVar("PORT")
+		port := env.OptionalIntEnvVar("PORT", 0)
+		if port == 0 {
+			portFlag, err := cmd.Flags().GetInt64("port")
+			cobra.CheckErr(err)
+			port = portFlag
+		}
 		actualPort := port - 1
 
 		verbose, _ := cmd.Flags().GetBool("verbose")
@@ -70,6 +75,7 @@ var devCmd = &cobra.Command{
 
 func init() {
 	devCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose output")
+	devCmd.Flags().Int64P("port", "p", 8000, "Development server port")
 }
 
 func runTemplProxy(ctx context.Context, logger *slog.Logger, port int64, actualPort int64) {
