@@ -3,6 +3,7 @@ package migrate
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"sort"
@@ -137,15 +138,15 @@ func migrateMigrations(logger *slog.Logger, conn *sql.DB) error {
 		}
 		err = migration.up(ctx, tx)
 		if err != nil {
+			err = errors.Join(err, tx.Rollback())
 			logger.Error(err.Error())
-			tx.Rollback()
 			return err
 		}
 
 		_, err = tx.Exec("INSERT INTO otter_migrations (id, migrated_at) VALUES ($1, $2)", migration.id, time.Now())
 		if err != nil {
+			err = errors.Join(err, tx.Rollback())
 			logger.Error(err.Error())
-			tx.Rollback()
 			return err
 		}
 

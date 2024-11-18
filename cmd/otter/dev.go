@@ -109,7 +109,9 @@ func runReloadServer(ctx context.Context, logger *slog.Logger, port int64) {
 	}
 
 	cmd := makeMainCmd(port)
-	cmd.Start()
+	if err := cmd.Start(); err != nil {
+		logger.Error(err.Error())
+	}
 
 	for {
 		select {
@@ -131,7 +133,9 @@ func runReloadServer(ctx context.Context, logger *slog.Logger, port int64) {
 			}
 			logger.Debug("Restarting server")
 			cmd = makeMainCmd(port)
-			cmd.Start()
+			if err := cmd.Start(); err != nil {
+				logger.Error(err.Error())
+			}
 			defer stop(cmd)
 		case err, ok := <-watcher.Errors:
 			if !ok {
