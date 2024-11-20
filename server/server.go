@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/a-h/templ"
 	"github.com/martinmunillas/otter"
@@ -61,6 +62,7 @@ type Tools struct {
 	RawT          func(key string, replacements ...i18n.Replacements) templ.Component
 	Translation   func(key string) string
 	ErrorT        func(key string) error
+	DateTime      func(t time.Time, style i18n.DateStyle) string
 	Send          Send
 	Redirect      Redirect
 	SetRawCookies func(rawCookies string)
@@ -87,6 +89,9 @@ func makeTools(w http.ResponseWriter, r *http.Request) Tools {
 		},
 		Translation: func(key string) string { return i18n.Translation(ctx, key) },
 		ErrorT:      func(key string) error { return i18n.ErrorT(ctx, key) },
+		DateTime: func(t time.Time, style i18n.DateStyle) string {
+			return i18n.DateTime(ctx, t, style)
+		},
 		Redirect: Redirect{
 			Server: func(path string, status int) {
 				http.Redirect(w, r, path, status)

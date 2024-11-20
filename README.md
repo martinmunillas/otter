@@ -12,7 +12,7 @@ Otter is a toolkit library to build UIs with go and templ
 
 `otter dev` Will launch a development server, make sure you have a PORT set in the environment variables
 
-`otter migrate run` Will migrate all missing database migrations, database driver and migrations directory can be specified in the otter.json of your project
+`otter migrate up` Will migrate all missing database migrations, database driver and migrations directory can be specified in the otter.json of your project
 
 `otter migrate new {description}` Will generate a new migrations file for you
 
@@ -34,8 +34,8 @@ Almost unstyled common UI components
 Environment variables utilities
 ### otter/response/send
 JSON and HTML response sender utilities
-### otter/api
-Api utilities
+### otter/server
+Server utilities
 ### otter/i18n
 I18n utilities
 #### Set up
