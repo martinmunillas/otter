@@ -50,6 +50,7 @@ type Send struct {
 	NotFound      SendNotFound
 	BadRequest    SendBadRequest
 	InternalError SendInternalError
+	NotModified   func()
 }
 
 type Redirect struct {
@@ -68,6 +69,8 @@ type Tools struct {
 	SetRawCookies func(rawCookies string)
 	SetCookie     func(cookie http.Cookie)
 	SetToast      func(toast otter.Toast)
+	AddHeader     func(key string, value string)
+	DelHeader     func(key string)
 }
 
 type Handler = func(r *http.Request, t Tools)
@@ -91,6 +94,12 @@ func makeTools(w http.ResponseWriter, r *http.Request) Tools {
 		ErrorT:      func(key string) error { return i18n.ErrorT(ctx, key) },
 		DateTime: func(t time.Time, style i18n.DateStyle) string {
 			return i18n.DateTime(ctx, t, style)
+		},
+		AddHeader: func(key string, value string) {
+			w.Header().Add(key, value)
+		},
+		DelHeader: func(key string) {
+			w.Header().Del(key)
 		},
 		Redirect: Redirect{
 			Server: func(path string, status int) {
@@ -163,6 +172,9 @@ func makeTools(w http.ResponseWriter, r *http.Request) Tools {
 				JSON: func(err error) {
 					send.Json.InternalError(w, err)
 				},
+			},
+			NotModified: func() {
+				w.WriteHeader(http.StatusNotModified)
 			},
 		},
 	}
