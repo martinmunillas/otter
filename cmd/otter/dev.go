@@ -33,7 +33,9 @@ var devCmd = &cobra.Command{
 			cobra.CheckErr(err)
 			port = portFlag
 		}
-		actualPort := port - 1
+		privatePort := port - 1
+		openFlag, err := cmd.Flags().GetBool("open")
+		cobra.CheckErr(err)
 
 		verbose, _ := cmd.Flags().GetBool("verbose")
 
@@ -62,11 +64,11 @@ var devCmd = &cobra.Command{
 
 		go func() {
 			defer wg.Done()
-			runTemplProxy(ctx, logger, port, actualPort)
+			runTemplProxy(ctx, logger, port, privatePort, openFlag)
 		}()
 		go func() {
 			defer wg.Done()
-			runReloadServer(ctx, logger, actualPort)
+			runReloadServer(ctx, logger, privatePort)
 		}()
 
 		wg.Wait()
@@ -75,15 +77,16 @@ var devCmd = &cobra.Command{
 
 func init() {
 	devCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose output")
-	devCmd.Flags().Int64P("port", "p", 8000, "Development server port")
+	devCmd.Flags().Int64P("port", "p", 8123, "Development server port")
+	devCmd.Flags().BoolP("open", "o", false, "Opens the browser")
 }
 
-func runTemplProxy(ctx context.Context, logger *slog.Logger, port int64, actualPort int64) {
+func runTemplProxy(ctx context.Context, logger *slog.Logger, port int64, actualPort int64, open bool) {
 	err := generatecmd.Run(ctx, logger, generatecmd.Arguments{
 		Watch:             true,
 		ProxyPort:         int(port),
 		Proxy:             fmt.Sprintf("http://localhost:%d", actualPort),
-		OpenBrowser:       true,
+		OpenBrowser:       open,
 		KeepOrphanedFiles: false,
 		WorkerCount:       runtime.NumCPU(),
 		IncludeVersion:    true,
@@ -97,7 +100,7 @@ func runTemplProxy(ctx context.Context, logger *slog.Logger, port int64, actualP
 func makeMainCmd(port int64) *exec.Cmd {
 	cmd := createDefaultCommand("go", "run", "./cmd/main.go")
 	setpgid(cmd)
-	cmd.Env = append(os.Environ(), fmt.Sprintf("PORT=%d", port))
+	cmd.Env = append(os.Environ(), fmt.Sprintf("PORT=%d", port), "OTTER_DEV_SERVER=true")
 	return cmd
 }
 

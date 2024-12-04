@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-func (s *server) ServeStatic(path string) *server {
+func (s *Server) ServeStatic(path string) *Server {
 	staticDir, err := filepath.Abs(path)
 	if err != nil {
 		log.Fatal(err)

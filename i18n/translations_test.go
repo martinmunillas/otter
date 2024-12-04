@@ -1,31 +1,29 @@
 package i18n
 
 import (
-	"io"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestProcessJson(t *testing.T) {
+func TestFlattenJson(t *testing.T) {
 	testcases := []struct {
-		in  io.Reader
+		in  map[string]interface{}
 		out map[string]string
 		err bool
 	}{
 		{
-			in: strings.NewReader(`{
-		"name": "John",
-		"address": {
-			"city": "New York",
-			"zip": {
-				"code": "10001",
-				"extension": "1234"
-			}
-		},
-		"age": "30"
-	}`),
+			in: map[string]interface{}{
+				"name": "John",
+				"address": map[string]interface{}{
+					"city": "New York",
+					"zip": map[string]interface{}{
+						"code":      "10001",
+						"extension": "1234",
+					},
+				},
+				"age": "30",
+			},
 			out: map[string]string{
 				"name":                  "John",
 				"address.city":          "New York",
@@ -36,24 +34,24 @@ func TestProcessJson(t *testing.T) {
 			err: false,
 		},
 		{
-			in: strings.NewReader(`{
-		"name": "John",
-		"address": {
-			"city": "New York",
-			"zip": {
-				"code": "10001",
-				"extension": "1234"
-			}
-		},
-		"age": 30
-	}`),
+			in: map[string]interface{}{
+				"name": "John",
+				"address": map[string]interface{}{
+					"city": "New York",
+					"zip": map[string]interface{}{
+						"code":      "10001",
+						"extension": "1234",
+					},
+				},
+				"age": 30, // only strings allowed
+			},
 			out: map[string]string{},
 			err: true,
 		},
 	}
 
 	for _, testcase := range testcases {
-		m, err := processLang(testcase.in)
+		m, err := flattenJson(testcase.in)
 		if testcase.err {
 			assert.Error(t, err)
 		} else {

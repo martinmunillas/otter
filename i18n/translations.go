@@ -46,31 +46,41 @@ func flattenJson(input map[string]interface{}) (map[string]string, error) {
 var translations = make(map[string]map[string]string, 2)
 var supportedLocales = make([]string, 0, 2)
 
-func processLang(r io.Reader) (map[string]string, error) {
-	m := map[string]interface{}{}
-	err := json.NewDecoder(r).Decode(&m)
-	if err != nil {
-		return nil, err
-	}
+func addLocale(locale string, m map[string]interface{}) error {
 	translation, err := flattenJson(m)
 	if err != nil {
-		return nil, err
-	}
-
-	return translation, nil
-
-}
-func AddLocale(locale string, r io.Reader) {
-	translation, err := processLang(r)
-	if err != nil {
-		utils.Throw(err.Error())
+		return err
 	}
 	supportedLocales = append(supportedLocales, locale)
 	translations[locale] = translation
 	if defaultLocale == "" {
 		defaultLocale = locale
 	}
+	return nil
+}
 
+func AddLocale(locale string, r io.Reader) {
+	m := map[string]interface{}{}
+	err := json.NewDecoder(r).Decode(&m)
+	if err != nil {
+		utils.Throw(err.Error())
+	}
+	err = addLocale(locale, m)
+	if err != nil {
+		utils.Throw(err.Error())
+	}
+}
+
+func AddLocaleBytes(locale string, b []byte) {
+	m := map[string]interface{}{}
+	err := json.Unmarshal(b, &m)
+	if err != nil {
+		utils.Throw(err.Error())
+	}
+	err = addLocale(locale, m)
+	if err != nil {
+		utils.Throw(err.Error())
+	}
 }
 
 type Replacements = map[string]any
