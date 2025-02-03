@@ -9,6 +9,7 @@ type InputProps struct {
 	Value       *string
 	Class       *string
 	Required    bool
+	ReadOnly    bool
 }
 
 func toValue(v *string) string {
@@ -21,7 +22,7 @@ func toValue(v *string) string {
 
 templ input(t string, props InputProps) {
 	@Label(props.Label, props.Required) {
-		<input class={ props.Class } type={ t } placeholder={ props.Placeholder } name={ props.Name } required?={ props.Required } value={ toValue(props.Value) }/>
+		<input class={ props.Class } type={ t } placeholder={ props.Placeholder } name={ props.Name } required?={ props.Required } readonly?={ props.ReadOnly } value={ toValue(props.Value) }/>
 	}
 }
 
@@ -43,6 +44,6 @@ templ DateInput(props InputProps) {
 
 templ Textarea(props InputProps) {
 	@Label(props.Label, props.Required) {
-		<textarea class={ props.Class } placeholder={ props.Placeholder } name={ props.Name } required?={ props.Required } value={ toValue(props.Value) }></textarea>
+		<textarea class={ props.Class } placeholder={ props.Placeholder } name={ props.Name } required?={ props.Required } readonly?={ props.ReadOnly } value={ toValue(props.Value) }></textarea>
 	}
 }
