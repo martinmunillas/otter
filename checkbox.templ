@@ -1,9 +1,10 @@
 package otter
 
 type CheckboxProps struct {
-	Label   string
-	Name    string
-	Checked bool
+	Label       string
+	LabelRender templ.Component
+	Name        string
+	Checked     bool
 }
 
 css checkboxLabelClass() {
@@ -19,6 +20,10 @@ templ Checkbox(props CheckboxProps) {
 	>
 		<input type="checkbox" name={ props.Name } value="true" checked?={ props.Checked }/>
 		<input type="checkbox" name={ props.Name } value="false" hidden/>
-		{ props.Label }
+		if props.LabelRender != nil {
+			@props.LabelRender
+		} else {
+			{ props.Label }
+		}
 	</label>
 }

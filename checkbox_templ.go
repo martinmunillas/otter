@@ -10,6 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 type CheckboxProps struct {
 	Label   string
+	LabelRender templ.Component
 	Name    string
 	Checked bool
 }
