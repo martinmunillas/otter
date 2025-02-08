@@ -4,6 +4,7 @@ type InputType string
 
 type InputProps struct {
 	Label       string
+	LabelRender templ.Component
 	Placeholder string
 	Name        string
 	Value       *string
@@ -21,7 +22,7 @@ func toValue(v *string) string {
 }
 
 templ input(t string, props InputProps) {
-	@Label(props.Label, props.Required) {
+	@Label(LabelProps{Label: props.Label, Required: props.Required, LabelRender: props.LabelRender}) {
 		<input class={ props.Class } type={ t } placeholder={ props.Placeholder } name={ props.Name } required?={ props.Required } readonly?={ props.ReadOnly } value={ toValue(props.Value) }/>
 	}
 }
@@ -43,7 +44,7 @@ templ DateInput(props InputProps) {
 }
 
 templ Textarea(props InputProps) {
-	@Label(props.Label, props.Required) {
+	@Label(LabelProps{Label: props.Label, Required: props.Required, LabelRender: props.LabelRender}) {
 		<textarea class={ props.Class } placeholder={ props.Placeholder } name={ props.Name } required?={ props.Required } readonly?={ props.ReadOnly } value={ toValue(props.Value) }></textarea>
 	}
 }

@@ -8,13 +8,23 @@ css labelClass() {
 	font-size: 0.875rem;
 }
 
-templ Label(label string, required bool) {
+type LabelProps struct {
+	Label       string
+	LabelRender templ.Component
+	Required    bool
+}
+
+templ Label(props LabelProps) {
 	<label
 		class={ labelClass(), }
 	>
 		<span>
-			{ label }
-			if required {
+			if props.LabelRender != nil {
+				@props.LabelRender
+			} else {
+				{ props.Label }
+			}
+			if props.Required {
 				<span class="required-indicator">*</span>
 			}
 		</span>
